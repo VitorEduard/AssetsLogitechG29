@@ -5,70 +5,77 @@ using UnityEngine.InputSystem.Controls;
 
 public class MotorManager : MonoBehaviour
 {
-    [SerializeField] private float modificadorFreio = 5f;
-    [SerializeField] private float modificadorAceleradorMarcha1 = 1f;
+    [SerializeField] private AnimationCurve eficienciaMotor;
+    [SerializeField] private AnimationCurve curvaTorque;
+    [SerializeField] private AnimationCurve curvaFreioMotor;
 
-    private MarchaEnum marchaAtual; 
-    private float velocidadeAtual = 0;
-    private float rotacaoMotor = 0f;
-    private float torque = 200f;
+    private MarchaEnum marchaAtual;
+    private float rotacaoLivre = 900f;
+    private float rpmMotor = 800f;
+    private float diferencial = 4.1f;
+    private float velocidadeSuavizada = 0.0f;
+    private float freioMotor = 2_000f;
 
 
-    System.Random random;
+    public float CalcularFreioMotor()
+    {
+        return curvaFreioMotor.Evaluate(rpmMotor) * freioMotor;
+    }
+
+    public float RelacaoMarcha()
+    {
+        return marchaAtual.Relacao * diferencial;
+    }
+
+    public float RpmAlvoMotorLivre(float pedalAceleracao)
+    {
+        return Mathf.Max(rotacaoLivre, rpmMotor + (pedalAceleracao * 400_000 * Time.deltaTime));
+    }
+
+    public bool EhMarchaNeutra()
+    {
+        return MarchaEnum.NEUTRO.Equals(marchaAtual);
+    }
+
+    public float CalcularPotenciaMotor(float pedalAceleracao)
+    {
+        float eficienciaMotor = curvaTorque.Evaluate(rpmMotor);
+        // Calcula o torque usando a curva de eficiência (Injeção Eletrônica)
+        float aceleracaoAplicada = Mathf.Min(eficienciaMotor, pedalAceleracao);
+        return aceleracaoAplicada * marchaAtual.Torque * 600;
+    }
+
+    public float CalcularRpmMotor(float rpmMotorAlvo, float impactoEmbreagem)
+    {
+        rpmMotor = Mathf.SmoothDamp(rpmMotor, rpmMotorAlvo, ref velocidadeSuavizada, impactoEmbreagem);
+        return rpmMotor;
+    }
+
+    public void ValidarSeRpmMuitoBaixo(float rpmMotorAlvo, float pedalEmbreagem)
+    {
+        if (rpmMotorAlvo < (rotacaoLivre * 0.2) && EmbreagemPressionada(pedalEmbreagem))
+        {
+            // MATAR CARRO!!!
+        }
+    }
+
+    public void ValidarVariacaoRpmMuitoAlta(float rpmMotorAlvo, float pedalEmbreagem)
+    {
+        if (Mathf.Abs(rpmMotorAlvo - rpmMotor) > 3000 && EmbreagemPressionada(pedalEmbreagem))
+        {
+            // MATAR CARRO!!!
+        }
+    }
 
     private void Start()
     {
-        random = new System.Random();
         marchaAtual = MarchaEnum.PRIMEIRA;
     }
 
-    // Update is called once per frame
-    void Update()
+
+    private bool EmbreagemPressionada(float pedalEmbreagem)
     {
-        //ControlarTrocaDeMarcha(rec);
-        //ControlarVelocidadeVeiculo(rec);
+        return pedalEmbreagem < 0.8f;
     }
 
-
-
-    private void ControlarTrocaDeMarcha(LogitechGSDK.DIJOYSTATE2ENGINES rec)
-    {
-        //if (ValidarBugInicio(rec)) return;
-
-        CalcularRotacaoMotor();
-    }
-
-    void ControlarVelocidadeVeiculo(LogitechGSDK.DIJOYSTATE2ENGINES rec)
-    {
-        //if (ValidarBugInicio(rec)) return;
-        /*
-        if (freio > 0)
-        {
-            velocidadeAtual -= freio * 5f * Time.deltaTime;
-        }
-        if (acelerador > 0)
-        {
-            for (int i = 0; 1 < pneus.Length; i++)
-            {
-                pneus[i].motorTorque = marchaAtual.Torque;
-            }
-        }
-        */
-    }
-
-
-    void CalcularRotacaoMotor()
-    {
-        /*
-        if (acelerador > 0)
-        {
-            rotacaoMotor += 135 * acelerador * Time.deltaTime;
-        }
-        else
-        {
-            rotacaoMotor -= 170 * Time.deltaTime;
-            rotacaoMotor = Math.Max(rotacaoMotor, random.Next(800, 900));
-        }
-        */
-    }
 }

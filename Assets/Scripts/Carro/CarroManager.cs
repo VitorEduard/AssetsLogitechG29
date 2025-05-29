@@ -13,6 +13,7 @@ public class CarroManager : MonoBehaviour
     [SerializeField] private VolanteManager volante;
     [SerializeField] private RodasManager rodas;
     [SerializeField] private MotorManager motor;
+    [SerializeField] private TransmicaoManager transmicao;
     private Rigidbody carroRigidBody;
     private GameObject centroDeMassa;
 
@@ -23,7 +24,7 @@ public class CarroManager : MonoBehaviour
     private float acelerador = 0;
     private float rotacaoVolanteAbsoluta = 0;
     private float rotacaoVolanteAbsolutaNormalizado = 0;
-    private float KPH;
+    private float kph;
 
     // Variavies para quando não usa o logitech
     private float rotacaoVolanteAbsolutaSimulada = 0;
@@ -39,17 +40,18 @@ public class CarroManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        InicializarVariaveis();
+        AtualizarVariaveis();
 
         addDownForce();
 
         volante.RotacionarVolante(rotacaoVolanteAbsoluta);
         rodas.GirarRodas(rotacaoVolanteAbsolutaNormalizado);
-        rodas.Mover(acelerador, MarchaEnum.PRIMEIRA);
-        rodas.Freiar(freio);
+        transmicao.Acelerar(rodas, motor, embreagem, acelerador);
+        rodas.FreiarMao(freio);
+        rodas.FreiarPedal(freio);
     }
 
-    void InicializarVariaveis()
+    void AtualizarVariaveis()
     {
         if (LogitechGSDK.LogiUpdate() && LogitechGSDK.LogiIsConnected(_INDEX_LOGI))
         {
@@ -63,7 +65,7 @@ public class CarroManager : MonoBehaviour
             {
                 embreagem = NormalizarDadoPedal(inputsLogi.rglSlider[0]);
                 freio = NormalizarDadoPedal(inputsLogi.lRz);
-                acelerador = NormalizarDadoPedal(inputsLogi.lY);
+                acelerador = Mathf.Max(0.1f, NormalizarDadoPedal(inputsLogi.lY));
             }
 
             rotacaoVolanteAbsoluta = inputsLogi.lX;
@@ -73,15 +75,17 @@ public class CarroManager : MonoBehaviour
         {
             embreagem = 0;
             freio = Input.GetKey(KeyCode.S) ? 1f : 0f;
-            acelerador = Input.GetKey(KeyCode.W) ? 1f : 0f;
+            acelerador = Input.GetKey(KeyCode.W) ? 1f : 0.1f;
             if (Input.GetKey(KeyCode.A)) rotacaoVolanteAbsolutaNormalizado = -1;
             else if (Input.GetKey(KeyCode.D)) rotacaoVolanteAbsolutaNormalizado = 1;
             else rotacaoVolanteAbsolutaNormalizado = 0;
 
-            rotacaoVolanteAbsoluta += (rotacaoVolanteAbsolutaNormalizado * 6000);
+            rotacaoVolanteAbsoluta += Mathf.Min(_MAXIMO_INPUT_VOLANTE, rotacaoVolanteAbsolutaNormalizado * 12000 * Time.deltaTime);
         }
 
-        KPH = carroRigidBody.linearVelocity.magnitude * 3.6f;
+        kph = carroRigidBody.linearVelocity.magnitude * 3.6f;
+
+        Debug.Log(kph);
         centroDeMassa = GameObject.Find("Massa");
         carroRigidBody.centerOfMass = centroDeMassa.transform.localPosition;
     }

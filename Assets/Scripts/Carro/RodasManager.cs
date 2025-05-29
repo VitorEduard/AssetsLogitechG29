@@ -6,34 +6,52 @@ public class RodasManager : MonoBehaviour
     [SerializeField] private WheelCollider[] pneus = new WheelCollider[4];
     [SerializeField] private GameObject[] meshPneus = new GameObject[4];
     [SerializeField] private TracaoEnum tracao = TracaoEnum.DIANTEIRA;
-    [SerializeField] private int poderDeFreio = 900000;
+    [SerializeField] private int poderDeFreioPedal = 50_000_000;
+    [SerializeField] private int poderDeFreioMao = 20_000_000;
     private int _ANGULO_MAX = 45;
     private int raio = 6;
 
-    public void Mover(float aceleradorNormalizado, MarchaEnum marchaAtual)
-    {
-        if (aceleradorNormalizado > 0)
-        {
-            float torquePorRoda = marchaAtual.Torque / tracao.qtdRodas;
 
-            for (int i = tracao.inicioRodas; i < tracao.fimRodas; i++)
-            {
-                pneus[i].motorTorque = aceleradorNormalizado * torquePorRoda * 5000 * Time.deltaTime;
-            }
+    public float RodasRPM()
+    {
+        float sum = 0;
+        for (int i = 0; i < 4; i++)
+        {
+            sum += pneus[i].rpm;
         }
+        return Mathf.Abs(sum / 4);
     }
 
-    public void Freiar(float freioNormalizado)
+    public void Mover(float forcaTotalMotor)
     {
-        pneus[2].motorTorque = freioNormalizado * poderDeFreio * Time.deltaTime;
-        pneus[3].motorTorque = freioNormalizado * poderDeFreio * Time.deltaTime;
+        float torquePorRoda = forcaTotalMotor / tracao.qtdRodas;
+
+        for (int i = tracao.inicioRodas; i < tracao.fimRodas; i++)
+        {
+            pneus[i].motorTorque = torquePorRoda * Time.deltaTime;
+        }
+     
+    }
+
+    public void FreiarMao(float freioNormalizado)
+    {
+        float valorFreio = (freioNormalizado * poderDeFreioMao * Time.deltaTime);
+        pneus[2].brakeTorque = valorFreio;
+        pneus[3].brakeTorque = valorFreio;
+    }
+
+    public void FreiarPedal(float freioNormalizado)
+    {
+        float valorFreio = (freioNormalizado * poderDeFreioPedal * Time.deltaTime);
+        pneus[0].brakeTorque = valorFreio * 0.7f;
+        pneus[1].brakeTorque = valorFreio * 0.7f;
+        pneus[2].brakeTorque = valorFreio;
+        pneus[3].brakeTorque = valorFreio;
     }
 
     public void GirarRodas(float anguloAbsoluto)
     {
-
         // acerman steering formula
-        Debug.Log(anguloAbsoluto);
         if (anguloAbsoluto > 0)
         {
             pneus[0].steerAngle = Mathf.Rad2Deg * Mathf.Atan(2.55f / (raio + 0.75f)) * anguloAbsoluto;
