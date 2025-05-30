@@ -51,6 +51,8 @@ public class MotorManager : MonoBehaviour
         return rpmMotor;
     }
 
+    public float RpmMotor() { return rpmMotor; }
+
     public void ValidarSeRpmMuitoBaixo(float rpmMotorAlvo, float pedalEmbreagem)
     {
         if (rpmMotorAlvo < (rotacaoLivre * 0.2) && EmbreagemPressionada(pedalEmbreagem))

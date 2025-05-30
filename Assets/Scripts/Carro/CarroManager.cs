@@ -90,6 +90,17 @@ public class CarroManager : MonoBehaviour
         carroRigidBody.centerOfMass = centroDeMassa.transform.localPosition;
     }
 
+    public float VelocidadeTotal()
+    {
+        return kph;
+    }
+
+    public float RpmMotor()
+    {
+        return motor.RpmMotor(); ;
+    }
+
+
     void OnApplicationQuit()
     {
         Debug.Log("SteeringShutdown:" + LogitechGSDK.LogiSteeringShutdown());
