@@ -14,7 +14,10 @@ public class VolanteManager : MonoBehaviour
         if (qtdRotacaoRelativa != 0)
         {
             float valorRelativo = qtdRotacaoRelativa * velocidadeGiroVolante;
-            transform.Rotate(new Vector3(0, 1, 0) * (valorRelativo / 100));
+            Vector3 rotacao = transform.localEulerAngles;
+            //transform.Rotate(Vector3.up * (valorRelativo / 100), Space.World);
+            rotacao.y += (valorRelativo / 100);
+            transform.localEulerAngles = rotacao;
             rotacaoVolanteAnt = rotacaoVoltanteAbsoluto;
         }
     }

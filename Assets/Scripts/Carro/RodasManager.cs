@@ -1,4 +1,5 @@
 
+using System;
 using UnityEngine;
 
 public class RodasManager : MonoBehaviour
@@ -8,7 +9,6 @@ public class RodasManager : MonoBehaviour
     [SerializeField] private TracaoEnum tracao = TracaoEnum.DIANTEIRA;
     [SerializeField] private int poderDeFreioPedal = 50_000_000;
     [SerializeField] private int poderDeFreioMao = 20_000_000;
-    private int _ANGULO_MAX = 45;
     private int raio = 6;
 
 
@@ -55,7 +55,7 @@ public class RodasManager : MonoBehaviour
         if (anguloAbsoluto > 0)
         {
             pneus[0].steerAngle = Mathf.Rad2Deg * Mathf.Atan(2.55f / (raio + 0.75f)) * anguloAbsoluto;
-            pneus[0].steerAngle = Mathf.Rad2Deg * Mathf.Atan(2.55f / (raio - 0.75f)) * anguloAbsoluto;
+            pneus[1].steerAngle = Mathf.Rad2Deg * Mathf.Atan(2.55f / (raio - 0.75f)) * anguloAbsoluto;
         }
         else if (anguloAbsoluto < 0)
         {
@@ -78,7 +78,7 @@ public class RodasManager : MonoBehaviour
         Quaternion rotacaoPneus = Quaternion.identity;
 
         // Corrige a rotação com base na inclinação do seu modelo
-        Quaternion correcao = Quaternion.Euler(new Vector3(0f, 0f, 90f));
+        Quaternion correcao = Quaternion.Euler(new Vector3(90f, 0f, 0f));
 
         for (int i = 0; i < pneus.Length; i++)
         {

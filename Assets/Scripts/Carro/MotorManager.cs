@@ -71,13 +71,22 @@ public class MotorManager : MonoBehaviour
 
     private void Start()
     {
-        marchaAtual = MarchaEnum.PRIMEIRA;
+        marchaAtual = MarchaEnum.NEUTRO;
     }
 
 
     private bool EmbreagemPressionada(float pedalEmbreagem)
     {
         return pedalEmbreagem < 0.8f;
+    }
+
+    public void TrocarMarcha(MarchaEnum marcha, float pedalEmbreagem)
+    {
+        if (pedalEmbreagem < 0.8)
+        {
+            // Mata Motor
+        }
+        this.marchaAtual = marcha;
     }
 
 }

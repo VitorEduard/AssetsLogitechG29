@@ -14,6 +14,8 @@ public class CarroManager : MonoBehaviour
     [SerializeField] private RodasManager rodas;
     [SerializeField] private MotorManager motor;
     [SerializeField] private TransmicaoManager transmicao;
+    [SerializeField] private bool offRoad = false;
+    [SerializeField] private bool pistaMolhada = false;
     private Rigidbody carroRigidBody;
     private GameObject centroDeMassa;
 
@@ -25,10 +27,7 @@ public class CarroManager : MonoBehaviour
     private float rotacaoVolanteAbsoluta = 0;
     private float rotacaoVolanteAbsolutaNormalizado = 0;
     private float kph;
-
-    // Variavies para quando não usa o logitech
-    private float rotacaoVolanteAbsolutaSimulada = 0;
-
+    private MarchaEnum marcha;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -44,18 +43,40 @@ public class CarroManager : MonoBehaviour
 
         addDownForce();
 
+        addEffects();
+
         volante.RotacionarVolante(rotacaoVolanteAbsoluta);
         rodas.GirarRodas(rotacaoVolanteAbsolutaNormalizado);
-        transmicao.Acelerar(rodas, motor, embreagem, acelerador);
+        transmicao.Acelerar(rodas, motor, embreagem, acelerador, kph);
         rodas.FreiarMao(freio);
         rodas.FreiarPedal(freio);
+    }
+
+    void addEffects()
+    {
+        // 
+        //LogitechGSDK.LogiPlayBumpyRoadEffect(0, 20);
+        //int forcaEfeito = (int) Mathf.Min(5 + kph / 5f, 15);
+        //LogitechGSDK.LogiPlayBumpyRoadEffect(0, forcaEfeito);
+        if (offRoad)
+        {
+            int forcaEfeito = (int) Mathf.Min(10 + kph / 1.2f, 100);
+            LogitechGSDK.LogiPlayDirtRoadEffect(0, forcaEfeito);
+        } 
+        else if (pistaMolhada)
+        {
+            int forcaEfeito = (int) Mathf.Min(10 + kph / 1f, 75);
+            LogitechGSDK.LogiPlaySlipperyRoadEffect(0, forcaEfeito);
+        }
+
+    
     }
 
     void AtualizarVariaveis()
     {
         if (LogitechGSDK.LogiUpdate() && LogitechGSDK.LogiIsConnected(_INDEX_LOGI))
         {
-            LogitechGSDK.LogiPlaySpringForce(_INDEX_LOGI, 0, 20, 10);
+            LogitechGSDK.LogiPlaySpringForce(_INDEX_LOGI, 0, 30, 60);
             inputsLogi = LogitechGSDK.LogiGetStateUnity(_INDEX_LOGI);
 
             embreagem = 0;
@@ -70,6 +91,14 @@ public class CarroManager : MonoBehaviour
 
             rotacaoVolanteAbsoluta = inputsLogi.lX;
             rotacaoVolanteAbsolutaNormalizado = rotacaoVolanteAbsoluta / _MAXIMO_INPUT_VOLANTE;
+
+            
+            MarchaEnum marchaNova = ObterMarchaAtual();
+            if (marchaNova != this.marcha)
+            {
+                marcha = marchaNova;
+                motor.TrocarMarcha(marcha, embreagem);
+            }
         }
         else
         {
@@ -85,7 +114,6 @@ public class CarroManager : MonoBehaviour
 
         kph = carroRigidBody.linearVelocity.magnitude * 3.6f;
 
-        Debug.Log(kph);
         centroDeMassa = GameObject.Find("Massa");
         carroRigidBody.centerOfMass = centroDeMassa.transform.localPosition;
     }
@@ -100,6 +128,40 @@ public class CarroManager : MonoBehaviour
         return motor.RpmMotor(); ;
     }
 
+    private MarchaEnum ObterMarchaAtual()
+    {
+        MarchaEnum marchaAtual = MarchaEnum.NEUTRO;
+        if (inputsLogi.rgbButtons[12] == 128)
+        {
+            marchaAtual = MarchaEnum.PRIMEIRA;
+        } 
+        else if (inputsLogi.rgbButtons[13] == 128)
+        {
+            marchaAtual = MarchaEnum.SEGUNDA;
+        }
+        else if (inputsLogi.rgbButtons[14] == 128)
+        {
+            marchaAtual = MarchaEnum.TERCEIRA;
+        }
+        else if (inputsLogi.rgbButtons[15] == 128)
+        {
+            marchaAtual = MarchaEnum.QUARTA;
+        }
+        else if (inputsLogi.rgbButtons[16] == 128)
+        {
+            marchaAtual = MarchaEnum.QUINTA;
+        }
+        else if (inputsLogi.rgbButtons[17] == 128)
+        {
+            marchaAtual = MarchaEnum.SEXTA;
+        }
+        else if (inputsLogi.rgbButtons[18] == 128)
+        {
+            marchaAtual = MarchaEnum.RE;
+        }
+
+        return marchaAtual;
+    }
 
     void OnApplicationQuit()
     {

@@ -5,7 +5,7 @@ public class TransmicaoManager : MonoBehaviour
     private MotorManager motor; 
     private float pedalEmbreagem, pedalEmbreagemInv, pedalAceleracao, rpmRodas;
 
-    public void Acelerar(RodasManager rodas, MotorManager motor, float pedalEmbreagem, float pedalAceleracao)
+    public void Acelerar(RodasManager rodas, MotorManager motor, float pedalEmbreagem, float pedalAceleracao, float kph)
     {
         this.pedalEmbreagem = pedalEmbreagem;
         this.pedalAceleracao = pedalAceleracao;
@@ -18,7 +18,11 @@ public class TransmicaoManager : MonoBehaviour
         if (!motor.EhMarchaNeutra())
         {
             float forcaFreioMotor = CalcularForcaFreioMotor(pedalEmbreagem, pedalAceleracao, motor);
-            float torqueAplicadoNaRoda = Mathf.Max(forcaAceleracaoMotor - forcaFreioMotor, 50f);
+            if (kph < 10)
+            {
+                forcaFreioMotor = 0;
+            }
+            float torqueAplicadoNaRoda = forcaAceleracaoMotor - forcaFreioMotor;
             Debug.Log(torqueAplicadoNaRoda);
             rodas.Mover(torqueAplicadoNaRoda);
         }
@@ -32,7 +36,6 @@ public class TransmicaoManager : MonoBehaviour
 
     private float CalcularForcaAceleracaoMotor()
     {
-
         if (motor.EhMarchaNeutra())
             return FaseMotorNeutro();
         else
@@ -41,7 +44,8 @@ public class TransmicaoManager : MonoBehaviour
 
     private float FaseMotorNeutro()
     {
-        float rpmMotorAlvoMotor = pedalEmbreagem * motor.RpmAlvoMotorLivre(pedalAceleracao);
+        float rpmMotorAlvoMotor = motor.RpmAlvoMotorLivre(pedalAceleracao);
+        rpmMotorAlvoMotor = rpmMotorAlvoMotor - (300 + motor.RpmMotor() * 15 * Time.deltaTime);
         motor.CalcularRpmMotor(rpmMotorAlvoMotor, 0.05f + 0.4f);
         return 0f;
     }
@@ -53,6 +57,8 @@ public class TransmicaoManager : MonoBehaviour
         float rpmMotorAlvoMotor = pedalEmbreagem * motor.RpmAlvoMotorLivre(pedalAceleracao);
         float rpmMotorAlvoRodas = pedalEmbreagemInv * rpmRodas * motor.RelacaoMarcha();
         float rpmMotorAlvo = rpmMotorAlvoMotor + rpmMotorAlvoRodas;
+
+        rpmMotorAlvo -= 30_000 * Time.deltaTime;
 
         // Se a rotação alvo for menos que a livre deve matar o carro!!!
         motor.ValidarSeRpmMuitoBaixo(rpmMotorAlvo, pedalEmbreagem);
